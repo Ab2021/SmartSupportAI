@@ -87,11 +87,45 @@ if submitted and title and description:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"ticket_{ticket_id}_{timestamp}.png"
             
-            # Get screenshot using Streamlit's built-in functionality
             with st.spinner("Preparing screenshot..."):
-                # Convert the current view to an image
-                img_bytes = st._get_screenshot()
-                img = Image.open(io.BytesIO(img_bytes))
+                # Create an image with white background
+                width, height = 800, 600
+                img = Image.new('RGB', (width, height), 'white')
+                
+                # Setup for drawing text
+                from PIL import ImageDraw, ImageFont
+                draw = ImageDraw.Draw(img)
+                font = ImageFont.load_default()
+                
+                # Draw ticket information with improved layout
+                y_position = 40
+                padding = 40
+                line_height = 25
+                
+                # Draw header
+                draw.text((width//2, 20), "Support Ticket Details", fill='black', font=font, anchor="mt")
+                
+                # Draw title
+                draw.text((padding, y_position), f"Ticket ID: {ticket_id}", fill='black', font=font)
+                y_position += line_height
+                
+                draw.text((padding, y_position), f"Title: {title}", fill='black', font=font)
+                y_position += line_height
+                
+                draw.text((padding, y_position), f"Category: {category}", fill='black', font=font)
+                y_position += line_height
+                
+                draw.text((padding, y_position), f"Priority: {priority}", fill='black', font=font)
+                y_position += line_height
+                
+                # Draw description with word wrap
+                description_lines = [description[i:i+60] for i in range(0, len(description), 60)]
+                draw.text((padding, y_position), "Description:", fill='black', font=font)
+                y_position += line_height
+                
+                for line in description_lines:
+                    draw.text((padding, y_position), line, fill='black', font=font)
+                    y_position += line_height
                 
                 # Convert image to bytes for download
                 img_buffer = io.BytesIO()
