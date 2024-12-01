@@ -20,6 +20,7 @@ class ContentGenerationAgent(Agent):
         """
         
         response = self.groq_service.get_completion(prompt)
+        print(f"[DEBUG] ContentGenerationAgent raw API response: {response}")
         return response
 
     def train(self, training_data):

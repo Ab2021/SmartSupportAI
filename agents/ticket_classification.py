@@ -40,10 +40,11 @@ class TicketClassificationAgent(Agent):
             """
             
             response = self.groq_service.get_completion(prompt)
+            print(f"[DEBUG] TicketClassificationAgent raw API response: {response}")
             
             # Check if the response contains an error message
             if response.startswith("Error:"):
-                print(f"Using default values due to API error: {response}")
+                print(f"[DEBUG] Using default values due to API error: {response}")
                 return self.default_category, self.default_priority
             
             # Try to parse the response

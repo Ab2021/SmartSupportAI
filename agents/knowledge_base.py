@@ -28,6 +28,7 @@ class KnowledgeBaseAgent(Agent):
         """
         
         relevant_solution = self.groq_service.get_completion(prompt)
+        print(f"[DEBUG] KnowledgeBaseAgent raw API response: {relevant_solution}")
         return relevant_solution
 
     def train(self, training_data):
