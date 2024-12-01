@@ -5,7 +5,6 @@ from utils.text_processing import preprocess_text
 
 class KnowledgeBaseAgent(Agent):
     def __init__(self):
-        super().__init__()
         self.groq_service = GroqService()
 
     def process(self, ticket_title: str, ticket_description: str):

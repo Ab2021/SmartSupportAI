@@ -4,7 +4,6 @@ from utils.text_processing import preprocess_text
 
 class PriorityUnderstandingAgent(Agent):
     def __init__(self):
-        super().__init__()
         self.groq_service = GroqService()
         self.sla_requirements = {
             4: "1 hour",   # Critical

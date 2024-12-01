@@ -4,7 +4,6 @@ from utils.text_processing import preprocess_text
 
 class LanguageSemanticsAgent(Agent):
     def __init__(self):
-        super().__init__()
         self.groq_service = GroqService()
         self.sentiment_levels = ['Very Negative', 'Negative', 'Neutral', 'Positive', 'Very Positive']
         self.urgency_levels = ['Low', 'Medium', 'High', 'Critical']
