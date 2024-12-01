@@ -8,6 +8,7 @@ from agents.language_semantics import LanguageSemanticsAgent
 from agents.knowledge_base import KnowledgeBaseAgent
 from agents.content_generation import ContentGenerationAgent
 from agents.intent_extraction import IntentExtractionAgent
+from agents.solution_recommendation import SolutionRecommendationAgent
 from database.db import db
 
 # Initialize agents
@@ -17,6 +18,7 @@ lsa = LanguageSemanticsAgent()
 kba = KnowledgeBaseAgent()
 cga = ContentGenerationAgent()
 iea = IntentExtractionAgent()
+sra = SolutionRecommendationAgent()
 
 st.title("AI Customer Support System")
 
@@ -69,6 +71,11 @@ if submitted and title and description:
             else:
                 print("[DEBUG] No valid knowledge base solution found")
                 kb_solution = None
+                
+            # Step 5: Get solution recommendations
+            print("[DEBUG] Generating solution recommendations...")
+            solution_info = sra.process(title, description, kb_solution, category)
+            print(f"[DEBUG] Solution recommendations: {solution_info}")
             
             # Step 3: Generate response
             print("[DEBUG] Generating response...")
@@ -87,7 +94,7 @@ if submitted and title and description:
             print(f"[DEBUG] Error: {error_message}")
             st.error(error_message)
         
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
             st.subheader("Ticket Classification")
             st.write(f"Category: {category}")
@@ -108,6 +115,13 @@ if submitted and title and description:
             st.write(f"Routing: {intent_info['routing']}")
 
         with col4:
+            st.subheader("Solution Recommendations")
+            st.write(f"Primary Solution: {solution_info['primary_solution']}")
+            st.write("Alternative Approaches:", ", ".join(solution_info['alternative_approaches']))
+            st.write(f"Est. Resolution Time: {solution_info['estimated_resolution_time']} mins")
+            st.write(f"Confidence Level: {solution_info['confidence_level']}%")
+
+        with col5:
             st.subheader("Knowledge Base Match")
             if kb_solution:
                 st.write(kb_solution)
