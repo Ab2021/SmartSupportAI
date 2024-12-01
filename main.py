@@ -3,12 +3,16 @@ import io
 from datetime import datetime
 from PIL import Image
 from agents.ticket_classification import TicketClassificationAgent
+from agents.priority_understanding import PriorityUnderstandingAgent
+from agents.language_semantics import LanguageSemanticsAgent
 from agents.knowledge_base import KnowledgeBaseAgent
 from agents.content_generation import ContentGenerationAgent
 from database.db import db
 
 # Initialize agents
 tca = TicketClassificationAgent()
+pua = PriorityUnderstandingAgent()
+lsa = LanguageSemanticsAgent()
 kba = KnowledgeBaseAgent()
 cga = ContentGenerationAgent()
 
@@ -34,10 +38,21 @@ if submitted and title and description:
             
             # Step 1: Classify ticket
             print("[DEBUG] Classifying ticket...")
-            category, priority = tca.process(title, description)
-            print(f"[DEBUG] Ticket classified as {category} with priority {priority}")
+            category, initial_priority = tca.process(title, description)
+            print(f"[DEBUG] Ticket classified as {category} with initial priority {initial_priority}")
             
-            # Step 2: Search knowledge base
+            # Step 2: Analyze language semantics
+            print("[DEBUG] Analyzing language semantics...")
+            semantics = lsa.process(title, description)
+            print(f"[DEBUG] Language analysis: {semantics}")
+            
+            # Step 3: Determine final priority and SLA
+            print("[DEBUG] Determining priority and SLA...")
+            priority_info = pua.process(title, description, initial_priority)
+            priority = priority_info['priority']
+            print(f"[DEBUG] Final priority: {priority}, SLA: {priority_info['sla_requirement']}")
+            
+            # Step 4: Search knowledge base
             print("[DEBUG] Searching knowledge base...")
             kb_solution = kba.process(title, description)
             
@@ -65,13 +80,20 @@ if submitted and title and description:
             print(f"[DEBUG] Error: {error_message}")
             st.error(error_message)
         
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
             st.subheader("Ticket Classification")
             st.write(f"Category: {category}")
             st.write(f"Priority: {priority}")
+            st.write(f"SLA: {priority_info['sla_requirement']}")
         
         with col2:
+            st.subheader("Language Analysis")
+            st.write(f"Sentiment: {semantics['sentiment']}")
+            st.write(f"Urgency: {semantics['urgency']}")
+            st.write("Key Phrases:", ", ".join(semantics['key_phrases']))
+        
+        with col3:
             st.subheader("Knowledge Base Match")
             if kb_solution:
                 st.write(kb_solution)
