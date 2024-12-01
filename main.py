@@ -38,14 +38,26 @@ if submitted and title and description:
         try:
             print("[DEBUG] Starting ticket processing pipeline...")
             
-            # Step 1: Extract intent
+            # Create async event loop
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            # Step 1: Extract intent with retry and validation
             print("[DEBUG] Extracting ticket intent...")
-            intent_info = iea.process(title, description)
+            intent_response = loop.run_until_complete(iea.process_async(title, description))
+            if not intent_response.success:
+                raise Exception(f"Intent extraction failed: {intent_response.error}")
+            intent_info = intent_response.data
             print(f"[DEBUG] Intent analysis: {intent_info}")
 
-            # Step 2: Classify ticket
+            # Step 2: Classify ticket with retry and validation
             print("[DEBUG] Classifying ticket...")
-            category, initial_priority = tca.process(title, description)
+            classification_response = loop.run_until_complete(tca.process_async(title, description))
+            if not classification_response.success:
+                raise Exception(f"Ticket classification failed: {classification_response.error}")
+            ticket_data = classification_response.data
+            category, initial_priority = ticket_data['category'], ticket_data['priority']
             print(f"[DEBUG] Ticket classified as {category} with initial priority {initial_priority}")
             
             # Step 3: Analyze language semantics

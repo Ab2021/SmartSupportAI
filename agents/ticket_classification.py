@@ -1,10 +1,11 @@
-from typing import Tuple
+from typing import Dict, Any
 from agents.base import Agent
 from services.groq_service import GroqService
 from utils.text_processing import preprocess_text
 
 class TicketClassificationAgent(Agent):
     def __init__(self):
+        super().__init__()
         self.groq_service = GroqService()
         self.categories = [
             "Technical Issue",
@@ -22,52 +23,66 @@ class TicketClassificationAgent(Agent):
         self.default_category = "General Inquiry"
         self.default_priority = 2
 
-    def process(self, title: str, description: str) -> Tuple[str, int]:
-        try:
-            # Preprocess the input text
-            preprocessed_text = preprocess_text(f"{title} {description}")
-            
-            # Use Groq to classify the ticket
-            prompt = f"""Analyze this support ticket and provide:
-            1. The most appropriate category from: {', '.join(self.categories)}
-            2. Priority level (1-4) based on urgency and impact
-            
-            Ticket:
-            Title: {title}
-            Description: {description}
-            
-            Respond in format: category|priority_number
-            """
-            
-            response = self.groq_service.get_completion(prompt)
-            print(f"[DEBUG] TicketClassificationAgent raw API response: {response}")
-            
-            # Check if the response contains an error message
-            if response.startswith("Error:"):
-                print(f"[DEBUG] Using default values due to API error: {response}")
-                return self.default_category, self.default_priority
-            
-            # Try to parse the response
-            try:
-                category, priority = response.strip().split("|")
-                priority = int(priority)
-                
-                # Validate category and priority
-                if category not in self.categories:
-                    category = self.default_category
-                if priority not in self.priority_levels:
-                    priority = self.default_priority
-                    
-                return category, priority
-                
-            except (ValueError, AttributeError) as e:
-                print(f"Error parsing API response: {str(e)}")
-                return self.default_category, self.default_priority
-                
-        except Exception as e:
-            print(f"Unexpected error in ticket classification: {str(e)}")
-            return self.default_category, self.default_priority
+    def validate_input(self, title: str, description: str) -> bool:
+        if not isinstance(title, str) or not title.strip():
+            return False
+        if not isinstance(description, str) or not description.strip():
+            return False
+        return True
 
-    def train(self, training_data):
-        # Training would be implemented here in a production system
-        pass
+    def sanitize_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
+        # Ensure category is valid
+        if response['category'] not in self.categories:
+            response['category'] = self.default_category
+            
+        # Ensure priority is valid
+        if not isinstance(response['priority'], int) or response['priority'] not in self.priority_levels:
+            response['priority'] = self.default_priority
+            
+        return response
+
+    def process(self, title: str, description: str) -> Dict[str, Any]:
+        # Validate input
+        if not self.validate_input(title, description):
+            raise ValueError("Invalid input parameters")
+
+        # Preprocess the input text
+        preprocessed_text = preprocess_text(f"{title} {description}")
+        
+        # Use Groq to classify the ticket
+        prompt = f"""Analyze this support ticket and provide:
+        1. The most appropriate category from: {', '.join(self.categories)}
+        2. Priority level (1-4) based on urgency and impact
+        
+        Ticket:
+        Title: {title}
+        Description: {description}
+        
+        Respond in format: category|priority_number
+        """
+        
+        response = self.groq_service.get_completion(prompt)
+        
+        if response.startswith("Error:"):
+            raise Exception(f"API Error: {response}")
+        
+        try:
+            category, priority = response.strip().split("|")
+            priority = int(priority)
+            
+            result = {
+                'category': category.strip(),
+                'priority': priority,
+                'confidence': 0.8,  # Added for tracking purposes
+                'raw_response': response
+            }
+            
+            # Sanitize and validate the response
+            return self.sanitize_response(result)
+            
+        except (ValueError, AttributeError) as e:
+            raise ValueError(f"Error parsing API response: {str(e)}")
+
+    def train(self, training_data) -> Dict[str, Any]:
+        # Training implementation would go here
+        return {"status": "success", "message": "Training not implemented yet"}
