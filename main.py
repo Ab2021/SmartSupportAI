@@ -1,4 +1,7 @@
 import streamlit as st
+import io
+from datetime import datetime
+from PIL import Image
 from agents.ticket_classification import TicketClassificationAgent
 from agents.knowledge_base import KnowledgeBaseAgent
 from agents.content_generation import ContentGenerationAgent
@@ -77,6 +80,35 @@ if submitted and title and description:
         
         st.subheader("Generated Response")
         st.write(response)
+        
+        # Add screenshot functionality
+        try:
+            # Create a timestamp for the filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"ticket_{ticket_id}_{timestamp}.png"
+            
+            # Get screenshot using Streamlit's built-in functionality
+            with st.spinner("Preparing screenshot..."):
+                # Convert the current view to an image
+                img_bytes = st._get_screenshot()
+                img = Image.open(io.BytesIO(img_bytes))
+                
+                # Convert image to bytes for download
+                img_buffer = io.BytesIO()
+                img.save(img_buffer, format='PNG')
+                img_bytes = img_buffer.getvalue()
+                
+                # Add download button
+                st.download_button(
+                    label="Download Ticket Screenshot",
+                    data=img_bytes,
+                    file_name=filename,
+                    mime="image/png"
+                )
+        except Exception as e:
+            error_message = f"Unable to generate screenshot: {str(e)}"
+            print(f"[DEBUG] Screenshot error: {error_message}")
+            st.warning("Screenshot functionality is currently unavailable")
 
 # Display sample tickets (for demonstration)
 st.header("Recent Tickets")
