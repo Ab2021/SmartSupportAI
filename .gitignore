@@ -42,3 +42,24 @@ ENV/
 
 # Logs
 *.log
+
+# Project specific
+generated-icon.png
+uv.lock
+pyproject.toml
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment
+*.pyc
+.pythonlibs/
+.upm/
+.config/
+
+# Cache
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/

@@ -9,6 +9,7 @@ from agents.knowledge_base import KnowledgeBaseAgent
 from agents.content_generation import ContentGenerationAgent
 from agents.intent_extraction import IntentExtractionAgent
 from agents.solution_recommendation import SolutionRecommendationAgent
+from agents.automated_resolution import AutomatedResolutionAgent
 from database.db import db
 
 # Initialize agents
@@ -18,6 +19,7 @@ lsa = LanguageSemanticsAgent()
 kba = KnowledgeBaseAgent()
 cga = ContentGenerationAgent()
 iea = IntentExtractionAgent()
+ara = AutomatedResolutionAgent()
 sra = SolutionRecommendationAgent()
 
 st.title("AI Customer Support System")
@@ -77,7 +79,12 @@ if submitted and title and description:
             solution_info = sra.process(title, description, kb_solution, category)
             print(f"[DEBUG] Solution recommendations: {solution_info}")
             
-            # Step 3: Generate response
+            # Step 6: Check for automation possibilities
+            print("[DEBUG] Checking automation possibilities...")
+            automation_info = ara.process(title, description, category, priority)
+            print(f"[DEBUG] Automation analysis: {automation_info}")
+            
+            # Step 7: Generate response
             print("[DEBUG] Generating response...")
             response = cga.process(title, description, kb_solution)
             
@@ -94,7 +101,7 @@ if submitted and title and description:
             print(f"[DEBUG] Error: {error_message}")
             st.error(error_message)
         
-        col1, col2, col3, col4, col5 = st.columns(5)
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
         with col1:
             st.subheader("Ticket Classification")
             st.write(f"Category: {category}")
@@ -122,6 +129,14 @@ if submitted and title and description:
             st.write(f"Confidence Level: {solution_info['confidence_level']}%")
 
         with col5:
+            st.subheader("Automation Analysis")
+            st.write(f"Can Automate: {'Yes' if automation_info['can_automate'] else 'No'}")
+            if automation_info['can_automate']:
+                st.write("Steps:", ", ".join(automation_info['automation_steps']))
+                st.write(f"Success Probability: {automation_info['success_probability']}%")
+                st.write("Required APIs:", ", ".join(automation_info['required_apis']))
+
+        with col6:
             st.subheader("Knowledge Base Match")
             if kb_solution:
                 st.write(kb_solution)
