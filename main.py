@@ -7,6 +7,7 @@ from agents.priority_understanding import PriorityUnderstandingAgent
 from agents.language_semantics import LanguageSemanticsAgent
 from agents.knowledge_base import KnowledgeBaseAgent
 from agents.content_generation import ContentGenerationAgent
+from agents.intent_extraction import IntentExtractionAgent
 from database.db import db
 
 # Initialize agents
@@ -15,6 +16,7 @@ pua = PriorityUnderstandingAgent()
 lsa = LanguageSemanticsAgent()
 kba = KnowledgeBaseAgent()
 cga = ContentGenerationAgent()
+iea = IntentExtractionAgent()
 
 st.title("AI Customer Support System")
 
@@ -36,12 +38,17 @@ if submitted and title and description:
         try:
             print("[DEBUG] Starting ticket processing pipeline...")
             
-            # Step 1: Classify ticket
+            # Step 1: Extract intent
+            print("[DEBUG] Extracting ticket intent...")
+            intent_info = iea.process(title, description)
+            print(f"[DEBUG] Intent analysis: {intent_info}")
+
+            # Step 2: Classify ticket
             print("[DEBUG] Classifying ticket...")
             category, initial_priority = tca.process(title, description)
             print(f"[DEBUG] Ticket classified as {category} with initial priority {initial_priority}")
             
-            # Step 2: Analyze language semantics
+            # Step 3: Analyze language semantics
             print("[DEBUG] Analyzing language semantics...")
             semantics = lsa.process(title, description)
             print(f"[DEBUG] Language analysis: {semantics}")
@@ -80,7 +87,7 @@ if submitted and title and description:
             print(f"[DEBUG] Error: {error_message}")
             st.error(error_message)
         
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.subheader("Ticket Classification")
             st.write(f"Category: {category}")
@@ -94,6 +101,13 @@ if submitted and title and description:
             st.write("Key Phrases:", ", ".join(semantics['key_phrases']))
         
         with col3:
+            st.subheader("Intent Analysis")
+            st.write(f"Primary Intent: {intent_info['primary_intent']}")
+            st.write("Secondary Intents:", ", ".join(intent_info['secondary_intents']))
+            st.write("Required Actions:", ", ".join(intent_info['required_actions']))
+            st.write(f"Routing: {intent_info['routing']}")
+
+        with col4:
             st.subheader("Knowledge Base Match")
             if kb_solution:
                 st.write(kb_solution)
