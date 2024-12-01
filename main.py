@@ -26,20 +26,41 @@ with st.form("ticket_form"):
 
 if submitted and title and description:
     with st.spinner("Processing ticket..."):
-        # Step 1: Classify ticket
-        category, priority = tca.process(title, description)
+        try:
+            print("[DEBUG] Starting ticket processing pipeline...")
+            
+            # Step 1: Classify ticket
+            print("[DEBUG] Classifying ticket...")
+            category, priority = tca.process(title, description)
+            print(f"[DEBUG] Ticket classified as {category} with priority {priority}")
+            
+            # Step 2: Search knowledge base
+            print("[DEBUG] Searching knowledge base...")
+            kb_solution = kba.process(title, description)
+            
+            # Validate knowledge base response
+            if kb_solution and isinstance(kb_solution, str) and len(kb_solution.strip()) > 0:
+                print("[DEBUG] Valid knowledge base solution found")
+            else:
+                print("[DEBUG] No valid knowledge base solution found")
+                kb_solution = None
+            
+            # Step 3: Generate response
+            print("[DEBUG] Generating response...")
+            response = cga.process(title, description, kb_solution)
+            
+            # Save ticket to database
+            print("[DEBUG] Saving ticket to database...")
+            ticket_id = db.save_ticket(title, description, category, priority)
+            
+            # Display results
+            st.success(f"Ticket processed successfully! ID: {ticket_id}")
+            print(f"[DEBUG] Ticket processing completed for ID: {ticket_id}")
         
-        # Step 2: Search knowledge base
-        kb_solution = kba.process(title, description)
-        
-        # Step 3: Generate response
-        response = cga.process(title, description, kb_solution)
-        
-        # Save ticket to database
-        ticket_id = db.save_ticket(title, description, category, priority)
-        
-        # Display results
-        st.success(f"Ticket processed successfully! ID: {ticket_id}")
+        except Exception as e:
+            error_message = f"An error occurred while processing the ticket: {str(e)}"
+            print(f"[DEBUG] Error: {error_message}")
+            st.error(error_message)
         
         col1, col2 = st.columns(2)
         with col1:
