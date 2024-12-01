@@ -5,7 +5,10 @@ from typing import Optional
 class GroqService:
     def __init__(self):
         self.api_url = "https://api.groq.com/openai/v1/chat/completions"
-        self.model = "llama-3.1-70b-versatile"
+        self.model = "llama2-70b-4096"
+        self.api_key = os.getenv('GROQ_API_KEY')
+        if not self.api_key:
+            raise ValueError("GROQ_API_KEY environment variable is not set")
         print(f"[DEBUG] Initializing GroqService with model: {self.model}")
     
     def get_completion(self, prompt: str, max_tokens: Optional[int] = 1000) -> str:

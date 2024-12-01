@@ -1,9 +1,11 @@
 from agents.base import Agent
 from services.groq_service import GroqService
 from utils.text_processing import preprocess_text
+from concurrent.futures import ThreadPoolExecutor
 
 class IntentExtractionAgent(Agent):
     def __init__(self):
+        super().__init__()
         self.groq_service = GroqService()
         self.intent_types = [
             'technical_support',

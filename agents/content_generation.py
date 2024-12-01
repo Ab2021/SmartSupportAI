@@ -3,6 +3,7 @@ from services.groq_service import GroqService
 
 class ContentGenerationAgent(Agent):
     def __init__(self):
+        super().__init__()
         self.groq_service = GroqService()
 
     def process(self, ticket_title: str, ticket_description: str, knowledge_base_solution: str = None):

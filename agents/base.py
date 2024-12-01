@@ -55,22 +55,37 @@ class MessageBus:
 class Agent(ABC):
     def __init__(self):
         self.message_bus = MessageBus()
-        self.executor = ThreadPoolExecutor(max_workers=3)
         self._retries = 3
         self._retry_delay = 1  # seconds
+        try:
+            self.executor = ThreadPoolExecutor(max_workers=3)
+        except Exception as e:
+            print(f"[DEBUG] Error initializing ThreadPoolExecutor: {str(e)}")
+            raise
 
     async def _execute_with_retry(self, func, *args, **kwargs) -> AgentResponse:
+        last_error = None
         for attempt in range(self._retries):
             try:
                 start_time = datetime.now()
-                result = await asyncio.get_event_loop().run_in_executor(
-                    self.executor, func, *args, **kwargs
-                )
+                # Wrap the execution in try-except to catch any executor-related errors
+                try:
+                    result = await asyncio.get_event_loop().run_in_executor(
+                        self.executor, func, *args, **kwargs
+                    )
+                except Exception as exec_error:
+                    print(f"[DEBUG] Executor error in {self.__class__.__name__}: {str(exec_error)}")
+                    raise exec_error
+
                 execution_time = (datetime.now() - start_time).total_seconds()
+                
+                # Handle None results
+                if result is None:
+                    raise ValueError("Agent returned None result")
                 
                 response = AgentResponse(
                     success=True,
-                    data=result,
+                    data=result if isinstance(result, dict) else {"result": result},
                     agent_name=self.__class__.__name__,
                     execution_time=execution_time
                 )
@@ -85,18 +100,22 @@ class Agent(ABC):
                 return response
                 
             except Exception as e:
-                if attempt == self._retries - 1:
-                    error_response = AgentResponse(
-                        success=False,
-                        error=str(e),
-                        agent_name=self.__class__.__name__
-                    )
-                    self.message_bus.publish(
-                        f"{self.__class__.__name__}.error",
-                        error_response.to_dict()
-                    )
-                    return error_response
-                await asyncio.sleep(self._retry_delay)
+                last_error = e
+                print(f"[DEBUG] Attempt {attempt + 1} failed for {self.__class__.__name__}: {str(e)}")
+                if attempt < self._retries - 1:
+                    await asyncio.sleep(self._retry_delay * (attempt + 1))  # Exponential backoff
+                    continue
+                    
+                error_response = AgentResponse(
+                    success=False,
+                    error=str(e),
+                    agent_name=self.__class__.__name__
+                )
+                self.message_bus.publish(
+                    f"{self.__class__.__name__}.error",
+                    error_response.to_dict()
+                )
+                return error_response
 
     async def process_async(self, *args, **kwargs) -> AgentResponse:
         return await self._execute_with_retry(self.process, *args, **kwargs)
